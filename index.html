@@ -1,1 +1,756 @@
+﻿<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productivity Dashboard</title>
+  <meta name="color-scheme" content="dark light">
+  <style>
+    :root {
+      --color-bg: #0f1117;
+      --color-surface: #1a1d27;
+      --color-primary: #4f6ef7;
+      --color-primary-hover: #3a58e0;
+      --color-danger: #e74c3c;
+      --color-danger-hover: #c0392b;
+      --color-success: #22c55e;
+      --color-text: #f0f0f0;
+      --color-text-muted: #9ca3af;
+      --color-border: #2d3148;
+      --color-done: rgba(255,255,255,0.35);
+      --color-input-bg: #252838;
+      --color-timer-finished: #e74c3c;
+      --color-topbar-bg: #13161f;
+      --color-topbar-border: #2d3148;
+      --color-switch-track: #3a3f5c;
+      --color-switch-thumb: #f0f0f0;
+      --color-pomodoro-focus: #4f6ef7;
+      --color-pomodoro-short: #22c55e;
+      --color-pomodoro-long: #f59e0b;
+      --spacing-xs: 4px;
+      --spacing-sm: 8px;
+      --spacing-md: 16px;
+      --spacing-lg: 24px;
+      --spacing-xl: 32px;
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --font-family: system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.25rem;
+      --font-size-xl: 2rem;
+      --font-size-clock: 3.5rem;
+      --shadow: 0 2px 8px rgba(0,0,0,0.4);
+      --btn-secondary-bg: #2d3148;
+      --btn-secondary-hover: #3a3f5c;
+      --btn-secondary-active: #4a5070;
+      --item-hover-bg: #252838;
+      --transition-theme: background-color 200ms ease,color 200ms ease,border-color 200ms ease,box-shadow 200ms ease;
+    }
+    [data-theme="light"] {
+      --color-bg: #f5f5f5;
+      --color-surface: #ffffff;
+      --color-text: #1a1a2e;
+      --color-text-muted: #6b7280;
+      --color-border: #e5e7eb;
+      --color-done: rgba(0,0,0,0.5);
+      --color-input-bg: #f5f5f5;
+      --color-topbar-bg: #ffffff;
+      --color-topbar-border: #e5e7eb;
+      --color-switch-track: #4f6ef7;
+      --color-switch-thumb: #ffffff;
+      --shadow: 0 2px 8px rgba(0,0,0,0.08);
+      --btn-secondary-bg: #e5e7eb;
+      --btn-secondary-hover: #d1d5db;
+      --btn-secondary-active: #b8bfc8;
+      --item-hover-bg: #f0f0f0;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:var(--font-family);background-color:var(--color-bg);color:var(--color-text);min-height:100vh;padding:0;overflow-x:hidden;transition:var(--transition-theme)}
 
+    /* ── Top Bar ── */
+    .topbar{position:sticky;top:0;z-index:100;background-color:var(--color-topbar-bg);border-bottom:1px solid var(--color-topbar-border);padding:var(--spacing-sm) var(--spacing-lg);display:flex;align-items:center;justify-content:flex-end;gap:var(--spacing-sm);transition:var(--transition-theme)}
+    .topbar-label{font-size:var(--font-size-sm);color:var(--color-text-muted);user-select:none;letter-spacing:.02em;transition:color 200ms ease}
+    .theme-switch{position:relative;display:inline-flex;align-items:center;cursor:pointer}
+    .theme-switch input{position:absolute;opacity:0;width:0;height:0}
+    .theme-switch-track{position:relative;width:52px;height:28px;border-radius:14px;background-color:var(--color-switch-track);transition:background-color 200ms ease;flex-shrink:0}
+    .theme-switch-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background-color:var(--color-switch-thumb);transition:transform 200ms ease,background-color 200ms ease;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+    .theme-switch input:checked~.theme-switch-track .theme-switch-thumb{transform:translateX(24px)}
+    .theme-switch:focus-within .theme-switch-track{outline:2px solid var(--color-primary);outline-offset:2px}
+    .theme-icon{font-size:1rem;line-height:1;user-select:none}
+
+    /* ── Layout ── */
+    .main-content{padding:var(--spacing-lg)}
+    @media(max-width:768px){.main-content{padding:var(--spacing-md)}}
+    @media(max-width:480px){.main-content{padding:var(--spacing-sm)}.topbar{padding:var(--spacing-sm) var(--spacing-md)}}
+    .dashboard{display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-lg);max-width:1200px;margin:0 auto}
+    @media(max-width:768px){.dashboard{grid-template-columns:1fr;gap:var(--spacing-md)}}
+    @media(max-width:480px){.dashboard{gap:var(--spacing-sm)}}
+    @media(min-width:1600px){.dashboard{max-width:1600px}}
+    .card{background:var(--color-surface);border-radius:var(--radius-lg);padding:var(--spacing-lg);box-shadow:var(--shadow);overflow:hidden;transition:var(--transition-theme)}
+    @media(max-width:480px){.card{padding:var(--spacing-md)}}
+
+    /* ── Buttons ── */
+    .btn{padding:var(--spacing-sm) var(--spacing-md);border:none;border-radius:var(--radius-sm);font-size:var(--font-size-base);font-family:var(--font-family);font-weight:500;cursor:pointer;transition:background-color 150ms ease,opacity 150ms ease,color 200ms ease;min-width:80px}
+    .btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+    .btn:disabled{opacity:.4;cursor:not-allowed}
+    .btn-primary{background-color:var(--color-primary);color:#fff}
+    .btn-primary:not(:disabled):hover{background-color:var(--color-primary-hover)}
+    .btn-primary:not(:disabled):active{background-color:#2d46cc}
+    .btn-secondary{background-color:var(--btn-secondary-bg);color:var(--color-text)}
+    .btn-secondary:not(:disabled):hover{background-color:var(--btn-secondary-hover)}
+    .btn-secondary:not(:disabled):active{background-color:var(--btn-secondary-active)}
+    .btn-icon{padding:var(--spacing-xs) var(--spacing-sm);border:none;border-radius:var(--radius-sm);font-size:var(--font-size-sm);font-family:var(--font-family);cursor:pointer;background:transparent;color:var(--color-text-muted);transition:background-color 150ms ease,color 150ms ease}
+    .btn-icon:hover{background-color:var(--color-border);color:var(--color-text)}
+    .btn-icon:active{background-color:var(--btn-secondary-active)}
+    .btn-icon:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+    .btn-icon.btn-danger:hover{background-color:var(--color-danger);color:#fff}
+
+    /* ── Greeting Card ── */
+    #greeting-component{display:flex;flex-direction:column;justify-content:center;gap:var(--spacing-xs)}
+    .greeting-text{font-size:var(--font-size-lg);font-weight:500;color:var(--color-text-muted);letter-spacing:.01em}
+    .clock-display{font-size:var(--font-size-clock);font-weight:700;color:var(--color-text);line-height:1;letter-spacing:-.02em}
+    .date-display{font-size:var(--font-size-base);color:var(--color-text-muted)}
+    @media(max-width:480px){.clock-display{font-size:2.5rem}}
+
+    /* Name edit row */
+    .name-row{display:flex;align-items:center;gap:var(--spacing-xs);margin-top:var(--spacing-sm)}
+    .name-display{font-size:var(--font-size-sm);color:var(--color-text-muted);cursor:pointer;border-bottom:1px dashed var(--color-border);padding-bottom:1px;transition:color 150ms ease,border-color 150ms ease}
+    .name-display:hover{color:var(--color-text);border-color:var(--color-primary)}
+    .name-input-wrap{display:flex;gap:var(--spacing-xs);flex:1}
+    .name-input{flex:1;min-width:0;padding:3px var(--spacing-sm);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-size:var(--font-size-sm);font-family:var(--font-family);color:var(--color-text);background:var(--color-input-bg);outline:none;transition:background-color 200ms ease,color 200ms ease}
+    .name-input:focus-visible{outline:2px solid var(--color-primary);outline-offset:0}
+    .name-edit-hint{font-size:.75rem;color:var(--color-text-muted);margin-top:2px}
+
+    /* ── Focus Timer (simple countdown) ── */
+    #timer-component{display:flex;flex-direction:column;align-items:center;gap:var(--spacing-sm)}
+    .timer-title{font-size:var(--font-size-base);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+    .timer-display{font-size:4rem;font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--color-text);font-variant-numeric:tabular-nums;transition:color 150ms ease}
+    .timer-display.is-finished{color:var(--color-timer-finished)}
+    .timer-message{font-size:var(--font-size-base);font-weight:600;color:var(--color-timer-finished);min-height:1.5em}
+    .timer-controls{display:flex;gap:var(--spacing-sm);flex-wrap:wrap;justify-content:center;width:100%}
+    @media(max-width:480px){.timer-display{font-size:3rem}}
+
+    /* ── Pomodoro Timer ── */
+    #pomodoro-component{display:flex;flex-direction:column;align-items:center;gap:var(--spacing-md)}
+    .pomodoro-title{font-size:var(--font-size-base);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+
+    /* Mode tabs */
+    .pomodoro-modes{display:flex;gap:var(--spacing-xs);width:100%;background:var(--color-input-bg);border-radius:var(--radius-md);padding:3px}
+    .pomo-mode-btn{flex:1;padding:6px var(--spacing-sm);border:none;border-radius:var(--radius-sm);font-size:.8rem;font-family:var(--font-family);font-weight:500;cursor:pointer;background:transparent;color:var(--color-text-muted);transition:background-color 150ms ease,color 150ms ease}
+    .pomo-mode-btn.active{background:var(--color-surface);color:var(--color-text);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+    .pomo-mode-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+
+    /* SVG ring */
+    .pomodoro-ring-wrap{position:relative;display:flex;align-items:center;justify-content:center;width:180px;height:180px;flex-shrink:0}
+    .pomodoro-ring{width:180px;height:180px;transform:rotate(-90deg)}
+    .ring-bg{fill:none;stroke:var(--color-border);stroke-width:10}
+    .ring-progress{fill:none;stroke:var(--color-pomodoro-focus);stroke-width:10;stroke-linecap:round;stroke-dasharray:502;stroke-dashoffset:0;transition:stroke-dashoffset 500ms linear,stroke 300ms ease}
+    .pomodoro-ring-center{position:absolute;display:flex;flex-direction:column;align-items:center;gap:2px}
+    .pomodoro-display{font-size:2.4rem;font-weight:700;letter-spacing:-.02em;color:var(--color-text);font-variant-numeric:tabular-nums}
+    .pomodoro-mode-label{font-size:.72rem;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.08em}
+
+    /* Session dots */
+    .pomodoro-sessions{display:flex;gap:var(--spacing-xs);align-items:center}
+    .session-dot{width:10px;height:10px;border-radius:50%;background:var(--color-border);transition:background-color 200ms ease}
+    .session-dot.done{background:var(--color-pomodoro-focus)}
+
+    .pomodoro-message{font-size:var(--font-size-sm);font-weight:600;color:var(--color-timer-finished);min-height:1.2em;text-align:center}
+    .pomodoro-controls{display:flex;gap:var(--spacing-sm);flex-wrap:wrap;justify-content:center;width:100%}
+
+    /* ── Todo ── */
+    #todo-component{display:flex;flex-direction:column;gap:var(--spacing-sm)}
+    .todo-title{font-size:var(--font-size-base);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.08em}
+    .todo-input-row{display:flex;gap:var(--spacing-sm);flex-wrap:wrap}
+    .todo-input-row input,.links-input-row input{flex:1;min-width:0;padding:var(--spacing-sm) var(--spacing-md);border:1px solid var(--color-border);border-radius:var(--radius-sm);font-size:var(--font-size-base);font-family:var(--font-family);color:var(--color-text);background:var(--color-input-bg);outline:none;transition:border-color 150ms ease,background-color 200ms ease,color 200ms ease}
+    .todo-input-row input:focus,.links-input-row input:focus{border-color:var(--color-primary)}
+    .todo-input-row input:focus-visible,.links-input-row input:focus-visible{outline:2px solid var(--color-primary);outline-offset:0}
+    #todo-list{list-style:none;display:flex;flex-direction:column;gap:var(--spacing-xs);overflow-y:auto;max-height:320px}
+    .todo-item{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-sm);border-radius:var(--radius-sm);transition:background-color 150ms ease}
+    .todo-item:hover{background-color:var(--item-hover-bg)}
+    .todo-item input[type="checkbox"]{width:16px;height:16px;flex-shrink:0;cursor:pointer;accent-color:var(--color-primary)}
+    .todo-item input[type="checkbox"]:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px}
+    .todo-item-text{flex:1;font-size:var(--font-size-base);color:var(--color-text);word-break:break-word;transition:opacity 150ms ease}
+    .todo-item-text.is-done{text-decoration:line-through;opacity:.5;color:var(--color-done)}
+    .todo-item-actions{display:flex;gap:var(--spacing-xs);flex-shrink:0}
+    .todo-edit-row{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);flex:1}
+    .todo-edit-input{flex:1;padding:var(--spacing-xs) var(--spacing-sm);border:1px solid var(--color-primary);border-radius:var(--radius-sm);font-size:var(--font-size-base);font-family:var(--font-family);color:var(--color-text);background:var(--color-input-bg);outline:none;transition:background-color 200ms ease,color 200ms ease}
+    .todo-edit-input:focus-visible{outline:2px solid var(--color-primary);outline-offset:0}
+    .todo-empty{font-size:var(--font-size-sm);color:var(--color-text-muted);text-align:center;padding:var(--spacing-md) 0}
+
+    /* ── Links ── */
+    #links-component{display:flex;flex-direction:column;gap:var(--spacing-sm)}
+    .links-title{font-size:var(--font-size-base);font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.08em}
+    .links-input-row{display:flex;gap:var(--spacing-sm);flex-wrap:wrap}
+    .links-error{font-size:var(--font-size-sm);color:var(--color-danger);min-height:1.2em}
+    #links-list{list-style:none;display:flex;flex-direction:column;gap:var(--spacing-xs);overflow-y:auto;max-height:280px}
+    .link-item{display:flex;align-items:center;gap:var(--spacing-sm);padding:var(--spacing-xs) var(--spacing-sm);border-radius:var(--radius-sm);transition:background-color 150ms ease}
+    .link-item:hover{background-color:var(--item-hover-bg)}
+    .link-btn{flex:1;text-align:left;background:transparent;border:none;cursor:pointer;font-size:var(--font-size-base);font-family:var(--font-family);color:var(--color-primary);padding:var(--spacing-xs) 0;word-break:break-all;transition:color 150ms ease}
+    .link-btn:hover{color:var(--color-primary-hover);text-decoration:underline}
+    .link-btn:active{color:#2d46cc}
+    .link-btn:focus-visible{outline:2px solid var(--color-primary);outline-offset:2px;border-radius:var(--radius-sm)}
+    .links-empty{font-size:var(--font-size-sm);color:var(--color-text-muted);text-align:center;padding:var(--spacing-md) 0}
+  </style>
+</head>
+<body>
+
+  <!-- Top Bar -->
+  <header class="topbar" role="banner">
+    <span class="topbar-label" id="theme-label">Mode Gelap</span>
+    <label class="theme-switch" title="Ganti tema terang / gelap">
+      <input type="checkbox" id="theme-toggle" role="switch" aria-checked="true" aria-label="Aktifkan mode gelap"/>
+      <span class="theme-switch-track"><span class="theme-switch-thumb"></span></span>
+    </label>
+    <span class="theme-icon" id="theme-icon" aria-hidden="true">🌙</span>
+  </header>
+
+  <main class="main-content">
+    <div class="dashboard">
+
+      <!-- Greeting + Clock -->
+      <div id="greeting-component" class="card">
+        <p id="greeting-text" class="greeting-text">Selamat Datang</p>
+        <p id="clock-display" class="clock-display">--:--</p>
+        <p id="date-display" class="date-display">--</p>
+        <div class="name-row">
+          <span id="name-display" class="name-display" title="Klik untuk ubah nama" tabindex="0" role="button" aria-label="Ubah nama">👤 Klik untuk set nama Anda</span>
+          <div id="name-input-wrap" class="name-input-wrap" style="display:none">
+            <input type="text" id="name-input" class="name-input" maxlength="50" placeholder="Nama Anda…" aria-label="Nama Anda"/>
+            <button id="name-save" class="btn btn-primary" type="button" style="min-width:auto;padding:3px 12px;font-size:.85rem">Simpan</button>
+            <button id="name-cancel" class="btn btn-secondary" type="button" style="min-width:auto;padding:3px 10px;font-size:.85rem">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Focus Timer -->
+      <div id="timer-component" class="card">
+        <h2 class="timer-title">Focus Timer</h2>
+        <p id="timer-display" class="timer-display">25:00</p>
+        <p id="timer-message" class="timer-message" aria-live="polite"></p>
+        <div class="timer-controls">
+          <button id="btn-start" class="btn btn-primary" type="button">Start</button>
+          <button id="btn-stop"  class="btn btn-secondary" type="button" disabled>Stop</button>
+          <button id="btn-reset" class="btn btn-secondary" type="button">Reset</button>
+        </div>
+      </div>
+
+      <!-- Pomodoro Timer -->
+      <div id="pomodoro-component" class="card">
+        <h2 class="pomodoro-title">Pomodoro</h2>
+
+        <div class="pomodoro-modes" role="group" aria-label="Mode Pomodoro">
+          <button class="pomo-mode-btn active" type="button" data-mode="focus"  data-seconds="1500">Focus</button>
+          <button class="pomo-mode-btn"        type="button" data-mode="short"  data-seconds="300">Short Break</button>
+          <button class="pomo-mode-btn"        type="button" data-mode="long"   data-seconds="900">Long Break</button>
+        </div>
+
+        <div class="pomodoro-ring-wrap" role="timer" aria-live="off">
+          <svg class="pomodoro-ring" viewBox="0 0 180 180" aria-hidden="true">
+            <circle class="ring-bg"       cx="90" cy="90" r="80"/>
+            <circle class="ring-progress" cx="90" cy="90" r="80" id="pomo-ring"/>
+          </svg>
+          <div class="pomodoro-ring-center">
+            <span id="pomo-display" class="pomodoro-display">25:00</span>
+            <span id="pomo-mode-label" class="pomodoro-mode-label">Focus</span>
+          </div>
+        </div>
+
+        <div class="pomodoro-sessions" aria-label="Sesi selesai" id="pomo-dots">
+          <span class="session-dot" aria-hidden="true"></span>
+          <span class="session-dot" aria-hidden="true"></span>
+          <span class="session-dot" aria-hidden="true"></span>
+          <span class="session-dot" aria-hidden="true"></span>
+        </div>
+
+        <p id="pomo-message" class="pomodoro-message" aria-live="polite"></p>
+
+        <div class="pomodoro-controls">
+          <button id="pomo-start" class="btn btn-primary"   type="button">Mulai</button>
+          <button id="pomo-stop"  class="btn btn-secondary" type="button" disabled>Pause</button>
+          <button id="pomo-reset" class="btn btn-secondary" type="button">Reset</button>
+        </div>
+      </div>
+
+      <!-- To-Do -->
+      <div id="todo-component" class="card">
+        <h2 class="todo-title">To-Do</h2>
+        <div class="todo-input-row">
+          <input type="text" id="todo-input" maxlength="200" placeholder="Tambah tugas baru…" aria-label="Teks tugas baru"/>
+          <button id="todo-add" class="btn btn-primary" type="button">Tambah</button>
+        </div>
+        <ul id="todo-list" aria-label="Daftar tugas" aria-live="polite"></ul>
+      </div>
+
+      <!-- Quick Links -->
+      <div id="links-component" class="card">
+        <h2 class="links-title">Quick Links</h2>
+        <div class="links-input-row">
+          <input type="text" id="link-name" maxlength="100" placeholder="Nama link…" aria-label="Nama link"/>
+          <input type="text" id="link-url" placeholder="URL (contoh: github.com)" aria-label="URL link" autocomplete="off"/>
+          <button id="link-add" class="btn btn-primary" type="button">Tambah</button>
+        </div>
+        <p id="link-name-error" class="links-error" aria-live="polite"></p>
+        <p id="link-url-error"  class="links-error" aria-live="polite"></p>
+        <ul id="links-list" aria-label="Daftar quick links" aria-live="polite"></ul>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // ── Storage Keys ─────────────────────────────────────────────────────────
+    const STORAGE_KEYS = {
+      TASKS:   'productivity_tasks',
+      LINKS:   'productivity_links',
+      THEME:   'productivity_theme',
+      NAME:    'productivity_name',
+      POMODORO:'productivity_pomodoro_sessions'
+    };
+
+    // ── StorageUtil ───────────────────────────────────────────────────────────
+    const StorageUtil = {
+      get(key, def) {
+        try { const r=localStorage.getItem(key); return r===null?def:JSON.parse(r); }
+        catch(_){ return def; }
+      },
+      set(key, val) {
+        try { localStorage.setItem(key,JSON.stringify(val)); return true; }
+        catch(_){ return false; }
+      }
+    };
+
+    // ── ThemeModule ───────────────────────────────────────────────────────────
+    const ThemeModule = (() => {
+      const DARK='dark', LIGHT='light';
+      let toggleEl, labelEl, iconEl;
+      function applyTheme(theme, save) {
+        document.documentElement.setAttribute('data-theme', theme);
+        const meta=document.querySelector('meta[name="color-scheme"]');
+        if(meta) meta.content=theme===DARK?'dark light':'light dark';
+        const isDark=theme===DARK;
+        if(toggleEl){ toggleEl.checked=isDark; toggleEl.setAttribute('aria-checked',String(isDark)); }
+        if(labelEl) labelEl.textContent=isDark?'Mode Gelap':'Mode Terang';
+        if(iconEl)  iconEl.textContent=isDark?'🌙':'☀️';
+        if(save) StorageUtil.set(STORAGE_KEYS.THEME, theme);
+      }
+      function toggle() {
+        const cur=document.documentElement.getAttribute('data-theme')||DARK;
+        applyTheme(cur===DARK?LIGHT:DARK, true);
+      }
+      function init() {
+        toggleEl=document.getElementById('theme-toggle');
+        labelEl=document.getElementById('theme-label');
+        iconEl=document.getElementById('theme-icon');
+        applyTheme(StorageUtil.get(STORAGE_KEYS.THEME, DARK), false);
+        if(toggleEl) toggleEl.addEventListener('change', toggle);
+      }
+      return { init };
+    })();
+
+    // ── TimeUtil ──────────────────────────────────────────────────────────────
+    const TimeUtil = {
+      formatTime(d) {
+        if(!(d instanceof Date)||isNaN(d.getTime())) return '--:--';
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+      },
+      formatDate(d) {
+        if(!(d instanceof Date)||isNaN(d.getTime())) return '--';
+        const days=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+        const months=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        return `${days[d.getDay()]}, ${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
+      },
+      getGreeting(h) {
+        if(h>=5&&h<=11)  return 'Selamat Pagi';
+        if(h>=12&&h<=14) return 'Selamat Siang';
+        if(h>=15&&h<=17) return 'Selamat Sore';
+        return 'Selamat Malam';
+      }
+    };
+
+    // ── GreetingModule ────────────────────────────────────────────────────────
+    const GreetingModule = (() => {
+      let greetingEl, clockEl, dateEl, nameDisplayEl, nameInputWrapEl, nameInputEl, nameSaveBtn, nameCancelBtn;
+      let userName = '';
+
+      function buildGreeting(hour, name) {
+        const base = TimeUtil.getGreeting(hour);
+        if (!name) return base;
+        return `${base}, ${name}`;
+      }
+
+      function tick() {
+        try {
+          const now = new Date();
+          if(isNaN(now.getTime())) throw new Error('invalid');
+          if(greetingEl) greetingEl.textContent = buildGreeting(now.getHours(), userName);
+          if(clockEl)    clockEl.textContent    = TimeUtil.formatTime(now);
+          if(dateEl)     dateEl.textContent      = TimeUtil.formatDate(now);
+        } catch(_) {
+          if(greetingEl) greetingEl.textContent = 'Selamat Datang';
+          if(clockEl)    clockEl.textContent    = '--:--';
+          if(dateEl)     dateEl.textContent      = '--';
+        }
+      }
+
+      function renderNameDisplay() {
+        if(!nameDisplayEl) return;
+        nameDisplayEl.textContent = userName
+          ? `👤 ${userName} — klik untuk ubah`
+          : '👤 Klik untuk set nama Anda';
+      }
+
+      function showEditMode() {
+        if(nameInputWrapEl) nameInputWrapEl.style.display = 'flex';
+        if(nameDisplayEl)   nameDisplayEl.style.display   = 'none';
+        if(nameInputEl)     { nameInputEl.value = userName; nameInputEl.focus(); nameInputEl.select(); }
+      }
+
+      function hideEditMode() {
+        if(nameInputWrapEl) nameInputWrapEl.style.display = 'none';
+        if(nameDisplayEl)   nameDisplayEl.style.display   = '';
+      }
+
+      function saveName() {
+        const val = nameInputEl ? nameInputEl.value.trim() : '';
+        userName = val.slice(0, 50);
+        StorageUtil.set(STORAGE_KEYS.NAME, userName);
+        renderNameDisplay();
+        hideEditMode();
+      }
+
+      function init() {
+        greetingEl      = document.getElementById('greeting-text');
+        clockEl         = document.getElementById('clock-display');
+        dateEl          = document.getElementById('date-display');
+        nameDisplayEl   = document.getElementById('name-display');
+        nameInputWrapEl = document.getElementById('name-input-wrap');
+        nameInputEl     = document.getElementById('name-input');
+        nameSaveBtn     = document.getElementById('name-save');
+        nameCancelBtn   = document.getElementById('name-cancel');
+
+        userName = StorageUtil.get(STORAGE_KEYS.NAME, '');
+        renderNameDisplay();
+        tick();
+        setInterval(tick, 1000);
+
+        if(nameDisplayEl) {
+          nameDisplayEl.addEventListener('click', showEditMode);
+          nameDisplayEl.addEventListener('keydown', e => { if(e.key==='Enter'||e.key===' '){e.preventDefault();showEditMode();} });
+        }
+        if(nameSaveBtn)   nameSaveBtn.addEventListener('click', saveName);
+        if(nameCancelBtn) nameCancelBtn.addEventListener('click', hideEditMode);
+        if(nameInputEl) {
+          nameInputEl.addEventListener('keydown', e => {
+            if(e.key==='Enter')  { e.preventDefault(); saveName(); }
+            if(e.key==='Escape') { e.preventDefault(); hideEditMode(); }
+          });
+        }
+      }
+      return { init };
+    })();
+
+    // ── TimerModule (simple focus timer) ─────────────────────────────────────
+    const TimerModule = (() => {
+      let status='idle', remaining=1500, intervalId=null, startTime=null, startRem=null;
+      let displayEl, messageEl, btnStart, btnStop, btnReset;
+      function fmt(s){ return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+      function start() {
+        if(status==='running') return;
+        startTime=Date.now(); startRem=remaining; status='running';
+        intervalId=setInterval(tick,500); render();
+      }
+      function tick() {
+        remaining=Math.max(0,startRem-Math.floor((Date.now()-startTime)/1000));
+        if(remaining===0) onFinish(); else render();
+      }
+      function stop()  { clearInterval(intervalId);intervalId=null;status='idle';render(); }
+      function reset() {
+        clearInterval(intervalId);intervalId=null;remaining=1500;status='idle';
+        if(messageEl) messageEl.textContent='';
+        if(displayEl) displayEl.classList.remove('is-finished');
+        render();
+      }
+      function onFinish() {
+        clearInterval(intervalId);intervalId=null;status='finished';render();
+        if(messageEl){ messageEl.textContent='Waktu Habis!'; setTimeout(()=>{if(messageEl)messageEl.textContent='';},3000); }
+      }
+      function render() {
+        if(displayEl){ displayEl.textContent=fmt(remaining); displayEl.classList.toggle('is-finished',status==='finished'); }
+        if(btnStart) btnStart.disabled=(status==='running');
+        if(btnStop)  btnStop.disabled=(status!=='running');
+        if(btnReset) btnReset.disabled=false;
+      }
+      function init() {
+        displayEl=document.getElementById('timer-display'); messageEl=document.getElementById('timer-message');
+        btnStart=document.getElementById('btn-start'); btnStop=document.getElementById('btn-stop'); btnReset=document.getElementById('btn-reset');
+        if(btnStart) btnStart.addEventListener('click',start);
+        if(btnStop)  btnStop.addEventListener('click',stop);
+        if(btnReset) btnReset.addEventListener('click',reset);
+        render();
+      }
+      return { init };
+    })();
+
+    // ── PomodoroModule ────────────────────────────────────────────────────────
+    const PomodoroModule = (() => {
+      // Config
+      const MODES = {
+        focus: { label:'Focus',       seconds:1500, color:'#4f6ef7' },
+        short: { label:'Short Break', seconds:300,  color:'#22c55e' },
+        long:  { label:'Long Break',  seconds:900,  color:'#f59e0b' }
+      };
+      const CIRCUMFERENCE = 2 * Math.PI * 80; // r=80 → ≈502.65
+
+      // State
+      let currentMode  = 'focus';
+      let totalSeconds = MODES.focus.seconds;
+      let remaining    = totalSeconds;
+      let status       = 'idle';   // idle | running | finished
+      let intervalId   = null;
+      let startTime    = null;
+      let startRem     = null;
+      let sessions     = 0;        // completed focus sessions (0-4)
+
+      // DOM refs
+      let displayEl, modeLabelEl, ringEl, dotsEl, messageEl, btnStart, btnStop, btnReset;
+      let modeBtns;
+
+      // ── Helpers ──
+      function fmt(s){ return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+
+      function updateRing() {
+        if(!ringEl) return;
+        const pct = totalSeconds > 0 ? remaining / totalSeconds : 0;
+        const offset = CIRCUMFERENCE * (1 - pct);
+        ringEl.style.strokeDashoffset = offset;
+        ringEl.style.stroke = MODES[currentMode].color;
+      }
+
+      function updateDots() {
+        if(!dotsEl) return;
+        const dots = dotsEl.querySelectorAll('.session-dot');
+        dots.forEach((d, i) => d.classList.toggle('done', i < sessions));
+        // Sync dot color to focus mode color
+        dots.forEach(d => { if(d.classList.contains('done')) d.style.background = MODES.focus.color; });
+      }
+
+      // ── Core ──
+      function setMode(mode) {
+        if(status === 'running') return; // don't allow mid-session switch
+        currentMode  = mode;
+        totalSeconds = MODES[mode].seconds;
+        remaining    = totalSeconds;
+        status       = 'idle';
+        if(messageEl) messageEl.textContent = '';
+        // Update mode button styles
+        if(modeBtns) modeBtns.forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+        render();
+      }
+
+      function start() {
+        if(status === 'running') return;
+        startTime = Date.now(); startRem = remaining; status = 'running';
+        intervalId = setInterval(tick, 500);
+        render();
+      }
+
+      function tick() {
+        remaining = Math.max(0, startRem - Math.floor((Date.now()-startTime)/1000));
+        if(remaining === 0) onFinish(); else render();
+      }
+
+      function stop() { clearInterval(intervalId); intervalId=null; status='idle'; render(); }
+
+      function reset() {
+        clearInterval(intervalId); intervalId=null;
+        remaining = totalSeconds; status = 'idle';
+        if(messageEl) messageEl.textContent = '';
+        render();
+      }
+
+      function onFinish() {
+        clearInterval(intervalId); intervalId=null; status='finished';
+        // Count completed focus sessions
+        if(currentMode === 'focus') {
+          sessions = (sessions + 1) % 5; // cycles 0-4
+          StorageUtil.set(STORAGE_KEYS.POMODORO, sessions);
+        }
+        render();
+        const msg = currentMode === 'focus'
+          ? '🎉 Sesi selesai! Saatnya istirahat.'
+          : '⏰ Istirahat selesai! Ayo fokus lagi.';
+        if(messageEl) {
+          messageEl.textContent = msg;
+          setTimeout(() => { if(messageEl) messageEl.textContent=''; }, 4000);
+        }
+        // Auto-suggest next mode after focus
+        if(currentMode === 'focus') {
+          const next = sessions % 4 === 0 ? 'long' : 'short';
+          setTimeout(() => setMode(next), 500);
+        }
+      }
+
+      // ── Render ──
+      function render() {
+        if(displayEl)   displayEl.textContent  = fmt(remaining);
+        if(modeLabelEl) modeLabelEl.textContent = MODES[currentMode].label;
+        updateRing();
+        updateDots();
+        if(btnStart) btnStart.disabled = (status==='running');
+        if(btnStop)  btnStop.disabled  = (status!=='running');
+        if(btnReset) btnReset.disabled = false;
+      }
+
+      function init() {
+        displayEl   = document.getElementById('pomo-display');
+        modeLabelEl = document.getElementById('pomo-mode-label');
+        ringEl      = document.getElementById('pomo-ring');
+        dotsEl      = document.getElementById('pomo-dots');
+        messageEl   = document.getElementById('pomo-message');
+        btnStart    = document.getElementById('pomo-start');
+        btnStop     = document.getElementById('pomo-stop');
+        btnReset    = document.getElementById('pomo-reset');
+        modeBtns    = document.querySelectorAll('.pomo-mode-btn');
+
+        sessions = StorageUtil.get(STORAGE_KEYS.POMODORO, 0);
+
+        // Wire mode buttons
+        if(modeBtns) modeBtns.forEach(btn => {
+          btn.addEventListener('click', () => setMode(btn.dataset.mode));
+        });
+
+        if(btnStart) btnStart.addEventListener('click', start);
+        if(btnStop)  btnStop.addEventListener('click',  stop);
+        if(btnReset) btnReset.addEventListener('click', reset);
+
+        // Init ring circumference
+        if(ringEl) { ringEl.style.strokeDasharray = CIRCUMFERENCE; ringEl.style.strokeDashoffset = '0'; }
+
+        render();
+      }
+      return { init };
+    })();
+
+    // ── TodoModule ────────────────────────────────────────────────────────────
+    const TodoModule = (() => {
+      let tasks=[], editingId=null;
+      let listEl, inputEl, addBtn;
+      function save() { StorageUtil.set(STORAGE_KEYS.TASKS,tasks); }
+      function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+      function addTask(text) {
+        const t=text.trim(); if(!t||t.length>200) return;
+        const now=Date.now(); tasks.push({id:String(now),text:t,done:false,createdAt:now}); save(); render();
+      }
+      function editTask(id) {
+        editingId=id; render();
+        const el=listEl&&listEl.querySelector(`[data-edit-id="${id}"]`); if(el) el.focus();
+      }
+      function saveEdit(id,v) {
+        const t=v.trim(); if(!t||t.length>200){cancelEdit();return;}
+        const task=tasks.find(x=>x.id===id); if(task){task.text=t;save();} editingId=null; render();
+      }
+      function cancelEdit() { editingId=null; render(); }
+      function toggleTask(id) { const t=tasks.find(x=>x.id===id); if(t){t.done=!t.done;save();render();} }
+      function deleteTask(id) { tasks=tasks.filter(t=>t.id!==id); save(); render(); }
+      function render() {
+        if(!listEl) return;
+        if(!tasks.length){listEl.innerHTML='<li class="todo-empty">Belum ada tugas. Tambahkan satu!</li>';return;}
+        listEl.innerHTML=tasks.map(task=>{
+          const eT=esc(task.text),eI=esc(task.id);
+          if(task.id===editingId) return `<li class="todo-item" data-id="${eI}"><div class="todo-edit-row"><input type="text" class="todo-edit-input" data-edit-id="${eI}" value="${eT}" maxlength="200" aria-label="Edit tugas"/><div class="todo-item-actions"><button class="btn btn-primary" type="button" data-action="save" data-id="${eI}">Simpan</button><button class="btn btn-secondary" type="button" data-action="cancel" data-id="${eI}">Batal</button></div></div></li>`;
+          return `<li class="todo-item" data-id="${eI}"><input type="checkbox" ${task.done?'checked':''} data-action="toggle" data-id="${eI}" aria-label="Tandai selesai: ${eT}"/><span class="todo-item-text${task.done?' is-done':''}">${eT}</span><div class="todo-item-actions"><button class="btn-icon" type="button" data-action="edit" data-id="${eI}" aria-label="Edit tugas">✏️</button><button class="btn-icon btn-danger" type="button" data-action="delete" data-id="${eI}" aria-label="Hapus tugas">🗑️</button></div></li>`;
+        }).join('');
+      }
+      function handleAdd() { if(!inputEl)return; addTask(inputEl.value); inputEl.value=''; }
+      function handleListEvent(e) {
+        const t=e.target; if(!t) return;
+        if(e.type==='keydown'&&t.classList.contains('todo-edit-input')){
+          const id=t.dataset.editId;
+          if(e.key==='Enter'){e.preventDefault();saveEdit(id,t.value);}
+          if(e.key==='Escape'){e.preventDefault();cancelEdit();}
+          return;
+        }
+        const id=t.dataset.id,action=t.dataset.action; if(!id||!action) return;
+        if(action==='toggle') toggleTask(id);
+        if(action==='edit')   editTask(id);
+        if(action==='delete') deleteTask(id);
+        if(action==='save'){const i=listEl.querySelector(`[data-edit-id="${id}"]`);saveEdit(id,i?i.value:'');}
+        if(action==='cancel') cancelEdit();
+      }
+      function init() {
+        listEl=document.getElementById('todo-list'); inputEl=document.getElementById('todo-input'); addBtn=document.getElementById('todo-add');
+        tasks=StorageUtil.get(STORAGE_KEYS.TASKS,[]);
+        if(addBtn)  addBtn.addEventListener('click',handleAdd);
+        if(inputEl) inputEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handleAdd();}});
+        if(listEl)  {listEl.addEventListener('click',handleListEvent);listEl.addEventListener('keydown',handleListEvent);}
+        render();
+      }
+      return { init };
+    })();
+
+    // ── LinksModule ───────────────────────────────────────────────────────────
+    const LinksModule = (() => {
+      let links=[];
+      let listEl,nameEl,urlEl,addBtn,nameErrEl,urlErrEl;
+      function save() { StorageUtil.set(STORAGE_KEYS.LINKS,links); }
+      function norm(url){ const t=url.trim(); return /^https?:\/\//i.test(t)?t:'https://'+t; }
+      function showErr(f,m){ if(f==='link-name'&&nameErrEl)nameErrEl.textContent=m; if(f==='link-url'&&urlErrEl)urlErrEl.textContent=m; }
+      function clearErr(){ if(nameErrEl)nameErrEl.textContent=''; if(urlErrEl)urlErrEl.textContent=''; }
+      function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;'); }
+      function addLink(name,url) {
+        clearErr();
+        const n=name.trim(),u=url.trim();
+        if(!n){showErr('link-name','Nama link tidak boleh kosong.');return;}
+        if(!u){showErr('link-url','URL tidak boleh kosong.');return;}
+        if(n.length>100){showErr('link-name','Nama link maksimal 100 karakter.');return;}
+        if(links.length>=20){showErr('link-url','Batas maksimal 20 link telah tercapai.');return;}
+        const now=Date.now(); links.push({id:String(now),name:n,url:norm(u),createdAt:now}); save(); render();
+        if(nameEl)nameEl.value=''; if(urlEl)urlEl.value='';
+      }
+      function deleteLink(id){ links=links.filter(l=>l.id!==id); save(); render(); }
+      function openLink(url){ window.open(url,'_blank','noopener,noreferrer'); }
+      function render() {
+        if(!listEl) return;
+        if(!links.length){listEl.innerHTML='<li class="links-empty">Belum ada link. Tambahkan satu!</li>';return;}
+        listEl.innerHTML=links.map(link=>{
+          const eN=esc(link.name),eI=esc(link.id),eU=esc(link.url);
+          return `<li class="link-item" data-id="${eI}"><button class="link-btn" type="button" data-action="open" data-id="${eI}" title="${eU}">${eN}</button><button class="btn-icon btn-danger" type="button" data-action="delete" data-id="${eI}" aria-label="Hapus link ${eN}">🗑️</button></li>`;
+        }).join('');
+      }
+      function handleAdd(){ addLink(nameEl?nameEl.value:'',urlEl?urlEl.value:''); }
+      function handleListEvent(e){
+        const t=e.target; if(!t) return;
+        const id=t.dataset.id,action=t.dataset.action; if(!id||!action) return;
+        if(action==='open'){const l=links.find(x=>x.id===id);if(l)openLink(l.url);}
+        if(action==='delete') deleteLink(id);
+      }
+      function init() {
+        listEl=document.getElementById('links-list'); nameEl=document.getElementById('link-name'); urlEl=document.getElementById('link-url');
+        addBtn=document.getElementById('link-add'); nameErrEl=document.getElementById('link-name-error'); urlErrEl=document.getElementById('link-url-error');
+        links=StorageUtil.get(STORAGE_KEYS.LINKS,[]);
+        if(addBtn)  addBtn.addEventListener('click',handleAdd);
+        if(urlEl)   urlEl.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();handleAdd();}});
+        if(listEl)  listEl.addEventListener('click',handleListEvent);
+        render();
+      }
+      return { init };
+    })();
+
+    // ── App ───────────────────────────────────────────────────────────────────
+    const App = {
+      init() {
+        ThemeModule.init();
+        GreetingModule.init();
+        TimerModule.init();
+        PomodoroModule.init();
+        TodoModule.init();
+        LinksModule.init();
+      }
+    };
+
+    document.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
+</html>
